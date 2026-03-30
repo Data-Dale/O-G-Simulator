@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ROV Pilot Simulator</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ══════════════════════════════ SELECTION SCREEN ══════════════════════════════ -->
+  <div id="selection-screen">
+    <div class="sel-header">
+      <div class="sel-logo">
+        <div class="sel-logo-mark">ROV</div>
+        <div class="sel-logo-text">
+          <h1>PILOT SIMULATOR</h1>
+          <p>Subsea Operations Training System &nbsp;·&nbsp; v2.1</p>
+        </div>
+      </div>
+      <div class="sel-header-badge">O&amp;G EDITION</div>
+    </div>
+
+    <div class="sel-body">
+      <!-- ROV Selection -->
+      <div class="sel-section-title">SELECT ROV SYSTEM</div>
+      <div class="rov-grid" id="rov-grid">
+        <!-- injected by JS -->
+      </div>
+
+      <!-- Environment Selection -->
+      <div class="sel-section-title">SELECT ENVIRONMENT</div>
+      <div class="env-grid" id="env-grid">
+        <!-- injected by JS -->
+      </div>
+
+      <!-- Launch -->
+      <div class="sel-launch">
+        <div class="sel-summary" id="sel-summary">Select an ROV and environment to begin</div>
+        <button class="launch-btn" id="launch-btn" disabled>LAUNCH SIMULATION</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════ SIMULATOR SCREEN ══════════════════════════════ -->
+  <div id="simulator-screen" class="hidden">
+    <canvas id="rov-canvas"></canvas>
+
+    <!-- ─── HUD OVERLAY ─── -->
+    <div id="hud">
+
+      <!-- Top Bar -->
+      <div class="hud-topbar">
+        <div class="hud-rov-id" id="hud-rov-id">—</div>
+        <div class="hud-status" id="hud-status">SYSTEMS NOMINAL</div>
+        <div class="hud-timer" id="hud-timer">00:00:00</div>
+      </div>
+
+      <!-- Camera label -->
+      <div class="hud-cam-label" id="hud-cam-label">CAM 1 · PILOT</div>
+
+      <!-- Crosshair -->
+      <div class="hud-crosshair">
+        <div class="xh-ring"></div>
+        <div class="xh-dot"></div>
+      </div>
+
+      <!-- ── LEFT PANEL ── -->
+      <div class="hud-left">
+
+        <div class="hud-panel">
+          <div class="panel-title">THRUSTERS</div>
+          <div id="thruster-display"><!-- injected --></div>
+        </div>
+
+        <div class="hud-panel">
+          <div class="panel-title">POWER &amp; TETHER</div>
+          <div class="bar-row">
+            <span class="bar-label">PWR</span>
+            <div class="bar-track"><div class="bar-fill pwr-fill" id="pwr-bar" style="width:0%"></div></div>
+            <span class="bar-val" id="pwr-val">0 W</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label">TNS</span>
+            <div class="bar-track"><div class="bar-fill tns-fill" id="tns-bar" style="width:0%"></div></div>
+            <span class="bar-val" id="tns-val">0 N</span>
+          </div>
+        </div>
+
+        <div class="hud-panel">
+          <div class="panel-title">SENSORS</div>
+          <div class="sensor-grid">
+            <div class="sensor-item"><span class="s-lbl">TEMP</span><span class="s-val" id="s-temp">4.0 °C</span></div>
+            <div class="sensor-item"><span class="s-lbl">SALT</span><span class="s-val" id="s-salt">35.0 ppt</span></div>
+            <div class="sensor-item"><span class="s-lbl">PRES</span><span class="s-val" id="s-pres">1.0 bar</span></div>
+            <div class="sensor-item"><span class="s-lbl">ALT</span><span class="s-val" id="s-alt">— m</span></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ── RIGHT PANEL ── -->
+      <div class="hud-right">
+
+        <div class="hud-panel depth-panel">
+          <div class="panel-title">DEPTH</div>
+          <div class="depth-wrap">
+            <div class="depth-scale-track">
+              <div class="depth-scale-fill" id="depth-fill"></div>
+              <div class="depth-indicator" id="depth-ind"></div>
+            </div>
+            <div class="depth-readout" id="depth-readout">0.0 m</div>
+          </div>
+        </div>
+
+        <div class="hud-panel">
+          <div class="panel-title">NAVIGATION</div>
+          <div class="compass-wrap">
+            <div class="compass" id="compass">
+              <div class="compass-bezel">
+                <span class="c-N">N</span>
+                <span class="c-E">E</span>
+                <span class="c-S">S</span>
+                <span class="c-W">W</span>
+              </div>
+              <div class="compass-needle-wrap" id="compass-needle-wrap">
+                <div class="compass-needle"></div>
+              </div>
+            </div>
+            <div class="hdg-val" id="hdg-val">HDG 000°</div>
+          </div>
+          <div class="att-row">
+            <div class="att-item"><span class="a-lbl">PITCH</span><span class="a-val" id="a-pitch">+0.0°</span></div>
+            <div class="att-item"><span class="a-lbl">ROLL</span><span class="a-val" id="a-roll">+0.0°</span></div>
+          </div>
+        </div>
+
+        <div class="hud-panel">
+          <div class="panel-title">LIGHTS &amp; STATUS</div>
+          <div class="lights-row" id="lights-row">
+            <div class="light-pip" id="lp1"></div>
+            <div class="light-pip" id="lp2"></div>
+            <span class="light-label" id="light-label">LIGHTS: OFF</span>
+          </div>
+          <div class="speed-row">
+            <span class="s-lbl">SPEED</span>
+            <span class="s-val" id="speed-val">0.00 kn</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ── ARTIFICIAL HORIZON ── -->
+      <div class="hud-horizon-wrap">
+        <div class="ah-frame">
+          <div class="ah-inner" id="ah-inner">
+            <div class="ah-sky"></div>
+            <div class="ah-gnd"></div>
+            <div class="ah-horizon"></div>
+          </div>
+          <div class="ah-reticle"></div>
+        </div>
+      </div>
+
+      <!-- ── MISSION PANEL ── -->
+      <div class="mission-panel" id="mission-panel">
+        <div class="panel-title">MISSION OBJECTIVES</div>
+        <div id="mission-list"></div>
+      </div>
+
+      <!-- ── CONTROL HINTS ── -->
+      <div class="hud-hints">
+        <span><kbd>W/S</kbd> Surge</span>
+        <span><kbd>A/D</kbd> Sway</span>
+        <span><kbd>R/F</kbd> Heave</span>
+        <span><kbd>Q/E</kbd> Yaw</span>
+        <span><kbd>T/G</kbd> Pitch</span>
+        <span><kbd>L</kbd> Lights</span>
+        <span><kbd>C</kbd> Camera</span>
+        <span><kbd>M</kbd> Manip</span>
+        <span><kbd>ESC</kbd> Pause</span>
+      </div>
+
+      <!-- ── ALERT STACK ── -->
+      <div class="alert-stack" id="alert-stack"></div>
+
+      <!-- ── DEPTH WARNING ── -->
+      <div class="depth-warn hidden" id="depth-warn">⚠ APPROACHING MAX DEPTH</div>
+
+    </div><!-- /hud -->
+
+    <!-- ─── PAUSE MENU ─── -->
+    <div id="pause-menu" class="hidden">
+      <div class="pause-box">
+        <div class="pause-title">SIMULATION PAUSED</div>
+        <button onclick="SimApp.resume()">RESUME</button>
+        <button onclick="SimApp.returnToMenu()">MAIN MENU</button>
+      </div>
+    </div>
+
+  </div><!-- /simulator-screen -->
+
+  <!-- Three.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- App scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/rov-builder.js"></script>
+  <script src="js/environment.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
