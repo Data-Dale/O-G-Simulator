@@ -59,6 +59,17 @@
       <!-- Camera label -->
       <div class="hud-cam-label" id="hud-cam-label">CAM 1 · PILOT</div>
 
+      <!-- Controller status -->
+      <div class="gp-status" id="gp-status" title="No controller">
+        <svg class="gp-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="2" y="7" width="20" height="12" rx="5"/>
+          <line x1="8" y1="11" x2="8" y2="15"/><line x1="6" y1="13" x2="10" y2="13"/>
+          <circle cx="16" cy="11" r="1"/><circle cx="18" cy="13" r="1"/>
+          <line x1="6" y1="7" x2="8" y2="4"/><line x1="18" y1="7" x2="16" y2="4"/>
+        </svg>
+        <span class="gp-label">NO CTRL</span>
+      </div>
+
       <!-- Crosshair -->
       <div class="hud-crosshair">
         <div class="xh-ring"></div>
@@ -170,15 +181,16 @@
 
       <!-- ── CONTROL HINTS ── -->
       <div class="hud-hints">
-        <span><kbd>W/S</kbd> Surge</span>
-        <span><kbd>A/D</kbd> Sway</span>
-        <span><kbd>R/F</kbd> Heave</span>
-        <span><kbd>Q/E</kbd> Yaw</span>
-        <span><kbd>T/G</kbd> Pitch</span>
-        <span><kbd>L</kbd> Lights</span>
-        <span><kbd>C</kbd> Camera</span>
-        <span><kbd>M</kbd> Manip</span>
-        <span><kbd>ESC</kbd> Pause</span>
+        <span><kbd>W/S</kbd><kbd>L̈</kbd> Surge</span>
+        <span><kbd>A/D</kbd><kbd>L↔</kbd> Sway</span>
+        <span><kbd>R/F</kbd><kbd>RT/LT</kbd> Heave</span>
+        <span><kbd>Q/E</kbd><kbd>R̈</kbd> Yaw</span>
+        <span><kbd>T/G</kbd><kbd>R↕</kbd> Pitch</span>
+        <span><kbd>Z/X</kbd><kbd>LB/RB</kbd> Roll</span>
+        <span><kbd>L</kbd><kbd>A</kbd> Lights</span>
+        <span><kbd>C</kbd><kbd>B</kbd> Camera</span>
+        <span><kbd>M</kbd><kbd>X</kbd> Manip</span>
+        <span><kbd>ESC</kbd><kbd>▶</kbd> Pause</span>
       </div>
 
       <!-- ── ALERT STACK ── -->

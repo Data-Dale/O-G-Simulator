@@ -35,6 +35,19 @@ const SimApp = (() => {
   /* ── Input ─────────────────────────────────────────────────── */
   const keys = {};
 
+  /* ── Gamepad state ─────────────────────────────────────────── */
+  // Xbox controller uses the W3C Standard Gamepad layout:
+  //   Axes  0/1 = left stick X/Y,  2/3 = right stick X/Y
+  //   Btn 0=A, 1=B, 2=X, 3=Y, 4=LB, 5=RB, 6=LT, 7=RT, 9=Start
+  const gp = {
+    index:    -1,
+    connected: false,
+    axes:     [0, 0, 0, 0],
+    buttons:  [],
+    prevBtns: [],
+    DEADZONE: 0.12,
+  };
+
   /* ── Mission state ─────────────────────────────────────────── */
   let missionDef   = null;
   let missionState = {};  // id -> bool
@@ -43,16 +56,42 @@ const SimApp = (() => {
   let tetherLine = null;
   const LARS_POS = new THREE.Vector3(0, 0, 0);  // LARS position (set on launch)
 
-  /* ── Thruster input axes ────────────────────────────────────── */
+  /* ── Thruster input axes — keyboard + gamepad merged ────────── */
   // surge (+fwd), sway (+stbd), heave (+up), yaw (+cw), pitch (+nose down), roll (+stbd down)
   function getAxes() {
-    const surge  = (keys['KeyW'] ? 1 : 0) - (keys['KeyS'] ? 1 : 0);
-    const sway   = (keys['KeyD'] ? 1 : 0) - (keys['KeyA'] ? 1 : 0);
-    const heave  = (keys['KeyR'] ? 1 : 0) - (keys['KeyF'] ? 1 : 0);
-    const yaw    = (keys['KeyE'] ? 1 : 0) - (keys['KeyQ'] ? 1 : 0);
-    const pitch  = (keys['KeyG'] ? 1 : 0) - (keys['KeyT'] ? 1 : 0);
-    const roll   = (keys['KeyX'] ? 1 : 0) - (keys['KeyZ'] ? 1 : 0);
-    return { surge, sway, heave, yaw, pitch, roll };
+    // ── Keyboard ──
+    const kSurge = (keys['KeyW'] ? 1 : 0) - (keys['KeyS'] ? 1 : 0);
+    const kSway  = (keys['KeyD'] ? 1 : 0) - (keys['KeyA'] ? 1 : 0);
+    const kHeave = (keys['KeyR'] ? 1 : 0) - (keys['KeyF'] ? 1 : 0);
+    const kYaw   = (keys['KeyE'] ? 1 : 0) - (keys['KeyQ'] ? 1 : 0);
+    const kPitch = (keys['KeyG'] ? 1 : 0) - (keys['KeyT'] ? 1 : 0);
+    const kRoll  = (keys['KeyX'] ? 1 : 0) - (keys['KeyZ'] ? 1 : 0);
+
+    if (!gp.connected) {
+      return { surge: kSurge, sway: kSway, heave: kHeave, yaw: kYaw, pitch: kPitch, roll: kRoll };
+    }
+
+    // ── Gamepad analog ──
+    const dz = v => Math.abs(v) < gp.DEADZONE ? 0 : v;
+
+    const gpSurge =  -dz(gp.axes[1]);                          // left  Y: push up = forward
+    const gpSway  =   dz(gp.axes[0]);                          // left  X: right = stbd
+    const gpYaw   =   dz(gp.axes[2]);                          // right X: right = yaw CW
+    const gpPitch =   dz(gp.axes[3]);                          // right Y: push up = nose up (negated below)
+    const gpHeave =  (gp.buttons[7]?.value ?? 0)               // RT: heave up
+                   - (gp.buttons[6]?.value ?? 0);              // LT: heave down
+    const gpRoll  =  (gp.buttons[5]?.pressed ? 1 : 0)         // RB: roll stbd
+                   - (gp.buttons[4]?.pressed ? 1 : 0);         // LB: roll port
+
+    const clamp = (a, b) => Math.max(-1, Math.min(1, a + b));
+    return {
+      surge: clamp(kSurge, gpSurge),
+      sway:  clamp(kSway,  gpSway),
+      heave: clamp(kHeave, gpHeave),
+      yaw:   clamp(kYaw,   gpYaw),
+      pitch: clamp(kPitch, -gpPitch),   // right Y down = nose down
+      roll:  clamp(kRoll,  gpRoll),
+    };
   }
 
   /* ── Per-ROV thruster contributions ────────────────────────── */
@@ -243,13 +282,34 @@ const SimApp = (() => {
     window.addEventListener('keydown', e => {
       keys[e.code] = true;
 
-      if (e.code === 'KeyL') toggleLights();
-      if (e.code === 'KeyC') cycleCam();
-      if (e.code === 'KeyM') toggleManip();
+      if (e.code === 'KeyL')   toggleLights();
+      if (e.code === 'KeyC')   cycleCam();
+      if (e.code === 'KeyM')   toggleManip();
       if (e.code === 'Escape') togglePause();
     });
 
     window.addEventListener('keyup', e => { keys[e.code] = false; });
+
+    // Gamepad connect / disconnect
+    window.addEventListener('gamepadconnected', e => {
+      gp.index     = e.gamepad.index;
+      gp.connected = true;
+      gp.prevBtns  = [];
+      updateGPHUD(true, e.gamepad.id);
+      showAlert('CONTROLLER CONNECTED — XBOX LAYOUT ACTIVE', 'alert-success');
+    });
+
+    window.addEventListener('gamepaddisconnected', e => {
+      if (e.gamepad.index === gp.index) {
+        gp.index     = -1;
+        gp.connected = false;
+        gp.axes      = [0, 0, 0, 0];
+        gp.buttons   = [];
+        gp.prevBtns  = [];
+        updateGPHUD(false);
+        showAlert('CONTROLLER DISCONNECTED', 'alert-warning');
+      }
+    });
   }
 
   function toggleLights() {
@@ -292,6 +352,61 @@ const SimApp = (() => {
     }
     state.manipOpen = !state.manipOpen;
     showAlert(`MANIPULATOR: ${state.manipOpen ? 'DEPLOYED' : 'STOWED'}`, 'alert-info');
+  }
+
+  /* ─── Gamepad polling (called every frame) ────────────────── */
+  // The Gamepad API requires polling via navigator.getGamepads() each frame;
+  // events alone are unreliable for axis values.
+  function pollGamepad() {
+    const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+
+    // Try to pick up a newly connected pad if none tracked yet
+    if (!gp.connected) {
+      for (let i = 0; i < pads.length; i++) {
+        if (pads[i]) { gp.index = i; gp.connected = true; updateGPHUD(true, pads[i].id); break; }
+      }
+      return;
+    }
+
+    const pad = pads[gp.index];
+    if (!pad) return;   // pad momentarily unavailable — keep waiting
+
+    // Refresh axes
+    for (let i = 0; i < 4 && i < pad.axes.length; i++) gp.axes[i] = pad.axes[i];
+
+    // Refresh all button objects (needed for .value on triggers)
+    gp.buttons = pad.buttons;
+
+    // Button edge detection — rising edge only, so one press = one action
+    const TOGGLE_BTNS = {
+      0: toggleLights,   // A  → lights
+      1: cycleCam,       // B  → cycle camera
+      2: toggleManip,    // X  → manipulator
+      9: togglePause,    // Start → pause
+    };
+
+    Object.entries(TOGGLE_BTNS).forEach(([idx, fn]) => {
+      const i   = Number(idx);
+      const cur  = pad.buttons[i]?.pressed ?? false;
+      const prev = gp.prevBtns[i]          ?? false;
+      if (cur && !prev) fn();
+    });
+
+    // Store previous button states
+    gp.prevBtns = pad.buttons.map(b => b.pressed);
+  }
+
+  function updateGPHUD(connected, id = '') {
+    const el  = document.getElementById('gp-status');
+    if (!el) return;
+    el.classList.toggle('gp-connected', connected);
+    // Shorten verbose browser ID strings to something readable
+    const label = connected
+      ? (id.toLowerCase().includes('xbox') ? 'XBOX' :
+         id.toLowerCase().includes('054c') ? 'PS'   : 'CTRL')
+      : 'NO CTRL';
+    el.querySelector('.gp-label').textContent = label;
+    el.title = id || 'No controller';
   }
 
   /* ═══════════════════════════════════════════════════════════
@@ -663,6 +778,11 @@ const SimApp = (() => {
     // Clear input
     for (const k in keys) delete keys[k];
 
+    // Reset gamepad analog state (keep connection — it persists across sessions)
+    gp.axes     = [0, 0, 0, 0];
+    gp.buttons  = [];
+    gp.prevBtns = [];
+
     document.getElementById('pause-menu').classList.add('hidden');
     document.getElementById('simulator-screen').classList.add('hidden');
     document.getElementById('selection-screen').classList.remove('hidden');
@@ -693,6 +813,7 @@ const SimApp = (() => {
 
     const t = now / 1000;
 
+    pollGamepad();
     updatePhysics(dt);
     updateCamera();
     updateHUD(dt);
