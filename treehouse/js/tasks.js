@@ -3,7 +3,7 @@
    ───────────────────────────────────────────── */
 
 import DB from './db.js';
-import { AppState, completeTask, renderMemberBar, openPinGate, showCelebration } from './app.js';
+import { AppState, completeTask, renderMemberBar, openModal, closeModal, openPinGate, showCelebration } from './app.js';
 import { uid, todayStr, formatTimeShort, escHtml, delegate } from './utils.js';
 
 let tasksViewMember = null; // member being viewed
