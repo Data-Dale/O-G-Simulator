@@ -739,6 +739,38 @@ body {
 
 .pause-box button:hover { background: rgba(0,170,255,0.25); }
 
+/* Controller status indicator */
+.gp-status {
+  position: absolute;
+  top: 60px;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--panel);
+  border: 1px solid rgba(0,255,136,0.15);
+  padding: 4px 9px;
+  font-size: 0.58rem;
+  color: var(--dim);
+  letter-spacing: 2px;
+  transition: border-color 0.3s, color 0.3s;
+}
+
+.gp-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  color: var(--dim);
+  transition: color 0.3s;
+}
+
+.gp-status.gp-connected {
+  border-color: rgba(0,255,136,0.45);
+  color: var(--green);
+}
+
+.gp-status.gp-connected .gp-icon { color: var(--green); }
+
 /* Scanline overlay (subtle) */
 #hud::after {
   content: '';
