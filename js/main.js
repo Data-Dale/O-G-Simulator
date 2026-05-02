@@ -336,12 +336,8 @@ const SimApp = (() => {
   }
 
   function cycleCam() {
-    const rovCfg = ROV_CONFIGS[state.selectedROV];
-    const maxCam = rovCfg.hasManip ? 2 : 2;
-    state.camera = (state.camera + 1) % (maxCam + 1);
-    const names = ['CAM 1 · PILOT', 'CAM 2 · CHASE', 'CAM 3 · OVERHEAD'];
-    const lbl = document.getElementById('hud-cam-label');
-    if (lbl) lbl.textContent = names[state.camera] || 'CAM';
+    state.camera = (state.camera + 1) % 3;
+    updateCamButtons();
   }
 
   function toggleManip() {
@@ -524,31 +520,196 @@ const SimApp = (() => {
      HUD
      ═══════════════════════════════════════════════════════════ */
 
+  /* ── ROV top-view diagram definitions ───────────────────── */
+  const DIAGRAM_DEFS = {
+    'videoray-pro4': {
+      viewBox: '0 0 180 90',
+      body: `
+        <ellipse cx="85" cy="45" rx="46" ry="14" fill="#141e28" stroke="#2c3c4c" stroke-width="1.2"/>
+        <ellipse cx="41" cy="45" rx="12" ry="12" fill="#0e1820" stroke="#2c3c4c" stroke-width="1"/>
+        <rect x="122" y="41" width="8" height="8" rx="1" fill="#0e1820" stroke="#2c3c4c"/>
+        <text x="90" y="80" fill="#2e3e4e" font-size="7" font-family="system-ui,Arial" text-anchor="middle" letter-spacing="1">VIDEORAY PRO 4</text>`,
+      thrusters: [
+        { id:'td-0', type:'circle',  cx:130, cy:34, r:7 },
+        { id:'td-1', type:'circle',  cx:130, cy:56, r:7 },
+        { id:'td-2', type:'diamond', cx:85,  cy:24, r:6 },
+      ],
+    },
+    'schilling-uhd': {
+      viewBox: '0 0 210 110',
+      body: `
+        <rect x="30" y="22" width="150" height="66" fill="none" stroke="#2c3c4c" stroke-width="1.2"/>
+        <rect x="36" y="24" width="138" height="62" fill="#141e28" opacity="0.7"/>
+        <rect x="44" y="14" width="52" height="11" rx="1" fill="#1a2530" stroke="#2c3c4c"/>
+        <rect x="114" y="14" width="52" height="11" rx="1" fill="#1a2530" stroke="#2c3c4c"/>
+        <line x1="30" y1="55" x2="180" y2="55" stroke="#2c3c4c" stroke-width="0.7" stroke-dasharray="4,3"/>
+        <text x="105" y="100" fill="#2e3e4e" font-size="7" font-family="system-ui,Arial" text-anchor="middle" letter-spacing="1">SCHILLING UHD</text>`,
+      thrusters: [
+        { id:'td-0', type:'circle', cx:30,  cy:36, r:8 },
+        { id:'td-1', type:'circle', cx:180, cy:36, r:8 },
+        { id:'td-2', type:'circle', cx:30,  cy:74, r:8 },
+        { id:'td-3', type:'circle', cx:180, cy:74, r:8 },
+        { id:'td-4', type:'square', cx:54,  cy:14, r:6 },
+        { id:'td-5', type:'square', cx:156, cy:14, r:6 },
+        { id:'td-6', type:'square', cx:54,  cy:91, r:6 },
+        { id:'td-7', type:'square', cx:156, cy:91, r:6 },
+      ],
+    },
+    'seaeye-falcon': {
+      viewBox: '0 0 190 100',
+      body: `
+        <rect x="26" y="18" width="138" height="64" fill="none" stroke="#2c3c4c" stroke-width="1.2"/>
+        <rect x="40" y="26" width="110" height="48" fill="#141e28" opacity="0.7"/>
+        <ellipse cx="38" cy="50" rx="13" ry="13" fill="#0e1820" stroke="#2c3c4c" stroke-width="1"/>
+        <circle cx="38" cy="50" r="6" fill="#1a2530"/>
+        <text x="95" y="94" fill="#2e3e4e" font-size="7" font-family="system-ui,Arial" text-anchor="middle" letter-spacing="1">SEAEYE FALCON</text>`,
+      thrusters: [
+        { id:'td-0', type:'circle',  cx:26,  cy:30, r:8 },
+        { id:'td-1', type:'circle',  cx:164, cy:30, r:8 },
+        { id:'td-2', type:'circle',  cx:26,  cy:70, r:8 },
+        { id:'td-3', type:'circle',  cx:164, cy:70, r:8 },
+        { id:'td-4', type:'diamond', cx:72,  cy:86, r:7 },
+        { id:'td-5', type:'diamond', cx:118, cy:86, r:7 },
+      ],
+    },
+    'millennium-plus': {
+      viewBox: '0 0 210 110',
+      body: `
+        <rect x="28" y="20" width="154" height="68" fill="none" stroke="#2c3c4c" stroke-width="1.2"/>
+        <rect x="34" y="22" width="142" height="64" fill="#141e28" opacity="0.7"/>
+        <rect x="42" y="12" width="56" height="11" rx="1" fill="#1a2530" stroke="#2c3c4c"/>
+        <rect x="112" y="12" width="56" height="11" rx="1" fill="#1a2530" stroke="#2c3c4c"/>
+        <line x1="28" y1="54" x2="182" y2="54" stroke="#2c3c4c" stroke-width="0.7" stroke-dasharray="4,3"/>
+        <text x="105" y="100" fill="#2e3e4e" font-size="7" font-family="system-ui,Arial" text-anchor="middle" letter-spacing="1">MILLENNIUM+</text>`,
+      thrusters: [
+        { id:'td-0', type:'circle', cx:28,  cy:34, r:8 },
+        { id:'td-1', type:'circle', cx:182, cy:34, r:8 },
+        { id:'td-2', type:'circle', cx:28,  cy:74, r:8 },
+        { id:'td-3', type:'circle', cx:182, cy:74, r:8 },
+        { id:'td-4', type:'square', cx:52,  cy:12, r:6 },
+        { id:'td-5', type:'square', cx:158, cy:12, r:6 },
+        { id:'td-6', type:'square', cx:52,  cy:93, r:6 },
+        { id:'td-7', type:'square', cx:158, cy:93, r:6 },
+      ],
+    },
+  };
+
+  function buildROVDiagramSVG(rovId) {
+    const def = DIAGRAM_DEFS[rovId] || DIAGRAM_DEFS['videoray-pro4'];
+    const idle = '#1e2c3c'; const idleStroke = '#2e4054';
+
+    const thrSVG = def.thrusters.map(t => {
+      if (t.type === 'circle') {
+        return `<circle id="${t.id}" cx="${t.cx}" cy="${t.cy}" r="${t.r}" fill="${idle}" stroke="${idleStroke}" stroke-width="1.2"/>`;
+      } else if (t.type === 'square') {
+        return `<rect id="${t.id}" x="${t.cx-t.r}" y="${t.cy-t.r}" width="${t.r*2}" height="${t.r*2}" fill="${idle}" stroke="${idleStroke}" stroke-width="1.2"/>`;
+      } else {
+        const r = t.r;
+        return `<polygon id="${t.id}" points="${t.cx},${t.cy-r} ${t.cx+r},${t.cy} ${t.cx},${t.cy+r} ${t.cx-r},${t.cy}" fill="${idle}" stroke="${idleStroke}" stroke-width="1.2"/>`;
+      }
+    }).join('');
+
+    return `<svg viewBox="${def.viewBox}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%">
+      <defs>
+        <filter id="gfwd" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="grev" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      ${def.body}
+      ${thrSVG}
+    </svg>`;
+  }
+
+  function updateVehicleDiagram(thrVals) {
+    thrVals.forEach((v, i) => {
+      const el = document.getElementById(`td-${i}`);
+      if (!el) return;
+      const abs = Math.abs(v);
+      if (abs < 0.05) {
+        el.setAttribute('fill', '#1e2c3c');
+        el.setAttribute('stroke', '#2e4054');
+        el.removeAttribute('filter');
+      } else if (v > 0) {
+        const a = (0.3 + abs * 0.7).toFixed(2);
+        el.setAttribute('fill', `rgba(39,199,110,${a})`);
+        el.setAttribute('stroke', '#27c76e');
+        el.setAttribute('filter', 'url(#gfwd)');
+      } else {
+        const a = (0.3 + abs * 0.7).toFixed(2);
+        el.setAttribute('fill', `rgba(224,68,68,${a})`);
+        el.setAttribute('stroke', '#e04444');
+        el.setAttribute('filter', 'url(#grev)');
+      }
+    });
+  }
+
   function initHUD() {
     const rovCfg = ROV_CONFIGS[state.selectedROV];
 
-    // ROV name
-    document.getElementById('hud-rov-id').textContent =
-      rovCfg.name.toUpperCase() + '  ·  ' + rovCfg.manufacturer.toUpperCase();
+    // Header vehicle name
+    document.getElementById('hud-rov-id').textContent = rovCfg.name.toUpperCase();
 
-    // Build thruster bars
+    // Thruster bars (in THRUSTERS tab)
     const labels = THRUSTER_LAYOUTS[state.selectedROV] || [];
     const container = document.getElementById('thruster-display');
     container.innerHTML = '';
     labels.forEach((lbl, i) => {
       container.innerHTML += `
-        <div class="thr-row">
-          <span class="thr-lbl">${lbl}</span>
-          <div class="thr-track" id="thr-${i}">
+        <div class="hh-thr-item">
+          <div class="hh-thr-lbl">${lbl}</div>
+          <div class="thr-track">
             <div class="thr-center"></div>
             <div class="thr-fill" id="thr-fill-${i}"></div>
           </div>
+          <div class="hh-thr-pct" id="thr-pct-${i}">0%</div>
         </div>`;
     });
 
-    // Depth scale marks (5 ticks)
-    const scaleTrack = document.getElementById('depth-fill');
-    if (scaleTrack) scaleTrack.style.height = '0%';
+    // ROV diagram in left panel
+    const diagEl = document.getElementById('rov-diagram');
+    if (diagEl) diagEl.innerHTML = buildROVDiagramSVG(state.selectedROV);
+
+    // Init bottom tabs + camera buttons
+    initTabs();
+    updateCamButtons();
+
+    // Depth scale reset
+    const df = document.getElementById('depth-fill');
+    if (df) df.style.height = '0%';
+  }
+
+  function initTabs() {
+    document.querySelectorAll('.hh-btab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.hh-btab').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.hh-bpane').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        const pane = document.getElementById('btab-' + btn.dataset.btab);
+        if (pane) pane.classList.add('active');
+      });
+    });
+
+    document.querySelectorAll('.hh-cam-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.camera = parseInt(btn.dataset.cam);
+        updateCamButtons();
+      });
+    });
+  }
+
+  function updateCamButtons() {
+    const names = ['CAM 1 · PILOT', 'CAM 2 · CHASE', 'CAM 3 · OVERHEAD'];
+    document.querySelectorAll('.hh-cam-btn').forEach(btn => {
+      const active = parseInt(btn.dataset.cam) === state.camera;
+      btn.classList.toggle('active', active);
+      const badge = btn.querySelector('.hh-cam-badge');
+      if (badge) badge.textContent = active ? 'ACTIVE' : 'STBY';
+    });
+    const lbl = document.getElementById('hud-cam-label');
+    if (lbl) lbl.textContent = names[state.camera] || 'CAM';
   }
 
   function updateHUD(dt) {
@@ -619,11 +780,16 @@ const SimApp = (() => {
       const pct = Math.min(50, Math.abs(v) * 50);
       fill.className = 'thr-fill ' + (v >= 0 ? 'fwd' : 'rev');
       fill.style.width = pct + '%';
+      const pctEl = document.getElementById(`thr-pct-${i}`);
+      if (pctEl) pctEl.textContent = Math.round(Math.abs(v) * 100) + '%';
     });
+
+    // Update vehicle diagram thruster glow
+    updateVehicleDiagram(thrVals);
 
     // ── Power ──
     const totalThr = thrVals.reduce((acc, v) => acc + Math.abs(v), 0) / thrVals.length;
-    const maxPwr   = rovCfg.power > 9999 ? rovCfg.power : rovCfg.power;
+    const maxPwr   = rovCfg.power;
     const curPwr   = Math.round(totalThr * maxPwr * (state.lightsOn ? 1.12 : 1.0));
     const pct      = Math.min(100, (curPwr / maxPwr) * 100);
     document.getElementById('pwr-bar').style.width = pct + '%';
@@ -637,18 +803,22 @@ const SimApp = (() => {
     const tension    = Math.max(0, (tetherDist / maxTether) * 100);
     document.getElementById('tns-bar').style.width = Math.min(100, tension).toFixed(1) + '%';
     document.getElementById('tns-val').textContent = Math.round(tetherDist * 9.8) + ' N';
+    const tdEl = document.getElementById('tether-dist');
+    if (tdEl) tdEl.textContent = tetherDist.toFixed(1) + ' m';
 
-    // ── HUD status colour ──
+    // ── Status pill ──
     const statusEl = document.getElementById('hud-status');
-    if (tension > 85) {
-      statusEl.textContent = '⚠ TETHER LIMIT';
-      statusEl.style.color = '#ff4444';
-    } else if (!state.lightsOn && ENV_CONFIGS[state.selectedEnv]?.sunInt < 0.1) {
-      statusEl.textContent = '⚠ LIGHTS REQUIRED';
-      statusEl.style.color = '#ffaa00';
-    } else {
-      statusEl.textContent = 'SYSTEMS NOMINAL';
-      statusEl.style.color = '#00ff88';
+    if (statusEl) {
+      if (tension > 85) {
+        statusEl.textContent = '⚠ TETHER LIMIT';
+        statusEl.className = 'hh-status-pill danger';
+      } else if (!state.lightsOn && ENV_CONFIGS[state.selectedEnv]?.sunInt < 0.1) {
+        statusEl.textContent = '⚠ LIGHTS REQUIRED';
+        statusEl.className = 'hh-status-pill warn';
+      } else {
+        statusEl.textContent = 'NOMINAL';
+        statusEl.className = 'hh-status-pill';
+      }
     }
 
     // ── Mission progress ──
@@ -660,16 +830,22 @@ const SimApp = (() => {
      ═══════════════════════════════════════════════════════════ */
 
   function initMission() {
-    const envCfg = ENV_CONFIGS[state.selectedEnv];
+    const envCfg  = ENV_CONFIGS[state.selectedEnv];
+    const listEl  = document.getElementById('mission-list');
+    const noneEl  = document.getElementById('mission-none');
+
     if (!envCfg.mission) {
-      document.getElementById('mission-panel').style.display = 'none';
+      if (listEl) listEl.style.display = 'none';
+      if (noneEl) noneEl.style.display = 'block';
       return;
     }
+
+    if (listEl) listEl.style.display = '';
+    if (noneEl) noneEl.style.display = 'none';
 
     missionDef   = MISSIONS[envCfg.mission];
     missionState = {};
     missionDef.objectives.forEach(o => { missionState[o.id] = false; });
-
     renderMissionList();
   }
 

@@ -3,130 +3,190 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ROV Pilot Simulator</title>
+  <title>Hammerhead Control System — ROV Pilot Simulator</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
   <!-- ══════════════════════════════ SELECTION SCREEN ══════════════════════════════ -->
   <div id="selection-screen">
+
     <div class="sel-header">
       <div class="sel-logo">
-        <div class="sel-logo-mark">ROV</div>
+        <div class="sel-logo-hex">
+          <svg viewBox="0 0 40 46" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 2 L38 12 L38 34 L20 44 L2 34 L2 12 Z" stroke="#df7920" stroke-width="1.5" fill="rgba(223,121,32,0.08)"/>
+            <text x="20" y="27" text-anchor="middle" fill="#df7920" font-size="11" font-weight="bold" font-family="system-ui,Arial" letter-spacing="1">HH</text>
+          </svg>
+        </div>
         <div class="sel-logo-text">
-          <h1>PILOT SIMULATOR</h1>
-          <p>Subsea Operations Training System &nbsp;·&nbsp; v2.1</p>
+          <span class="sel-logo-main">HAMMERHEAD</span>
+          <span class="sel-logo-sub">CONTROL SYSTEM &nbsp;·&nbsp; ROV PILOT SIMULATOR &nbsp;·&nbsp; v2.1</span>
         </div>
       </div>
-      <div class="sel-header-badge">O&amp;G EDITION</div>
+      <div class="sel-header-badge">SCHILLING ROBOTICS</div>
     </div>
 
     <div class="sel-body">
-      <!-- ROV Selection -->
       <div class="sel-section-title">SELECT ROV SYSTEM</div>
-      <div class="rov-grid" id="rov-grid">
-        <!-- injected by JS -->
-      </div>
+      <div class="rov-grid" id="rov-grid"></div>
 
-      <!-- Environment Selection -->
       <div class="sel-section-title">SELECT ENVIRONMENT</div>
-      <div class="env-grid" id="env-grid">
-        <!-- injected by JS -->
-      </div>
+      <div class="env-grid" id="env-grid"></div>
 
-      <!-- Launch -->
       <div class="sel-launch">
         <div class="sel-summary" id="sel-summary">Select an ROV and environment to begin</div>
         <button class="launch-btn" id="launch-btn" disabled>LAUNCH SIMULATION</button>
       </div>
     </div>
+
   </div>
 
   <!-- ══════════════════════════════ SIMULATOR SCREEN ══════════════════════════════ -->
   <div id="simulator-screen" class="hidden">
     <canvas id="rov-canvas"></canvas>
 
-    <!-- ─── HUD OVERLAY ─── -->
+    <!-- ─────────────────────────── HUD OVERLAY ─────────────────────────── -->
     <div id="hud">
 
-      <!-- Top Bar -->
-      <div class="hud-topbar">
-        <div class="hud-rov-id" id="hud-rov-id">—</div>
-        <div class="hud-status" id="hud-status">SYSTEMS NOMINAL</div>
-        <div class="hud-timer" id="hud-timer">00:00:00</div>
-      </div>
+      <!-- ══ HEADER BAR ══ -->
+      <div class="hh-header">
 
-      <!-- Camera label -->
-      <div class="hud-cam-label" id="hud-cam-label">CAM 1 · PILOT</div>
-
-      <!-- Controller status -->
-      <div class="gp-status" id="gp-status" title="No controller">
-        <svg class="gp-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <rect x="2" y="7" width="20" height="12" rx="5"/>
-          <line x1="8" y1="11" x2="8" y2="15"/><line x1="6" y1="13" x2="10" y2="13"/>
-          <circle cx="16" cy="11" r="1"/><circle cx="18" cy="13" r="1"/>
-          <line x1="6" y1="7" x2="8" y2="4"/><line x1="18" y1="7" x2="16" y2="4"/>
-        </svg>
-        <span class="gp-label">NO CTRL</span>
-      </div>
-
-      <!-- Crosshair -->
-      <div class="hud-crosshair">
-        <div class="xh-ring"></div>
-        <div class="xh-dot"></div>
-      </div>
-
-      <!-- ── LEFT PANEL ── -->
-      <div class="hud-left">
-
-        <div class="hud-panel">
-          <div class="panel-title">THRUSTERS</div>
-          <div id="thruster-display"><!-- injected --></div>
-        </div>
-
-        <div class="hud-panel">
-          <div class="panel-title">POWER &amp; TETHER</div>
-          <div class="bar-row">
-            <span class="bar-label">PWR</span>
-            <div class="bar-track"><div class="bar-fill pwr-fill" id="pwr-bar" style="width:0%"></div></div>
-            <span class="bar-val" id="pwr-val">0 W</span>
-          </div>
-          <div class="bar-row">
-            <span class="bar-label">TNS</span>
-            <div class="bar-track"><div class="bar-fill tns-fill" id="tns-bar" style="width:0%"></div></div>
-            <span class="bar-val" id="tns-val">0 N</span>
+        <!-- Logo -->
+        <div class="hh-logo">
+          <svg class="hh-logo-hex" viewBox="0 0 32 37" fill="none">
+            <path d="M16 1.5 L30.5 9.75 L30.5 27.25 L16 35.5 L1.5 27.25 L1.5 9.75 Z" stroke="#df7920" stroke-width="1.2" fill="rgba(223,121,32,0.06)"/>
+            <text x="16" y="22" text-anchor="middle" fill="#df7920" font-size="9" font-weight="bold" font-family="system-ui,Arial" letter-spacing="1">HH</text>
+          </svg>
+          <div class="hh-logo-words">
+            <span class="hh-logo-main">HAMMERHEAD</span>
+            <span class="hh-logo-sub">CONTROL SYSTEM</span>
           </div>
         </div>
 
-        <div class="hud-panel">
-          <div class="panel-title">SENSORS</div>
-          <div class="sensor-grid">
-            <div class="sensor-item"><span class="s-lbl">TEMP</span><span class="s-val" id="s-temp">4.0 °C</span></div>
-            <div class="sensor-item"><span class="s-lbl">SALT</span><span class="s-val" id="s-salt">35.0 ppt</span></div>
-            <div class="sensor-item"><span class="s-lbl">PRES</span><span class="s-val" id="s-pres">1.0 bar</span></div>
-            <div class="sensor-item"><span class="s-lbl">ALT</span><span class="s-val" id="s-alt">— m</span></div>
+        <div class="hh-sep"></div>
+
+        <!-- Vehicle ID + connection -->
+        <div class="hh-vehicle-block">
+          <div class="hh-conn-dot" id="hh-conn-dot"></div>
+          <span class="hh-vehicle-name" id="hud-rov-id">—</span>
+          <span class="hh-conn-label">CONNECTED</span>
+        </div>
+
+        <div class="hh-sep"></div>
+
+        <!-- Workflow tabs -->
+        <div class="hh-wtabs">
+          <button class="hh-wtab active">SURVEY</button>
+          <button class="hh-wtab">INTERVENTION</button>
+          <button class="hh-wtab">INSPECTION</button>
+          <button class="hh-wtab">FREE FLY</button>
+        </div>
+
+        <!-- Right cluster -->
+        <div class="hh-header-right">
+          <div class="hh-alarm-pill" id="hh-alarm-pill">
+            <span class="hh-alarm-icon">▲</span>
+            <span id="alarm-count">0</span> ALARMS
+          </div>
+          <div class="hh-sep"></div>
+          <div class="hh-status-pill" id="hud-status">NOMINAL</div>
+          <div class="hh-sep"></div>
+          <div class="hh-timer" id="hud-timer">00:00:00</div>
+          <div class="hh-sep"></div>
+          <!-- Controller status -->
+          <div class="gp-status" id="gp-status" title="No controller">
+            <svg class="gp-icon" viewBox="0 0 22 14" fill="none" stroke="currentColor" stroke-width="1.4">
+              <rect x="1" y="1" width="20" height="12" rx="4"/>
+              <line x1="6.5" y1="5" x2="6.5" y2="9"/><line x1="4.5" y1="7" x2="8.5" y2="7"/>
+              <circle cx="15" cy="5" r="1" fill="currentColor" stroke="none"/>
+              <circle cx="17" cy="8" r="1" fill="currentColor" stroke="none"/>
+            </svg>
+            <span class="gp-label">NO CTRL</span>
           </div>
         </div>
 
-      </div>
+      </div><!-- /hh-header -->
 
-      <!-- ── RIGHT PANEL ── -->
-      <div class="hud-right">
+      <!-- ══ LEFT PANEL ══ -->
+      <div class="hh-left">
 
-        <div class="hud-panel depth-panel">
-          <div class="panel-title">DEPTH</div>
-          <div class="depth-wrap">
+        <!-- Cameras -->
+        <div class="hh-psection">
+          <div class="hh-plabel">CAMERAS</div>
+          <div class="hh-cam-list" id="hh-cam-list">
+            <button class="hh-cam-btn active" data-cam="0">
+              <span class="hh-cam-dot"></span>
+              <span class="hh-cam-name">CAM 1 &nbsp;·&nbsp; PILOT</span>
+              <span class="hh-cam-badge">ACTIVE</span>
+            </button>
+            <button class="hh-cam-btn" data-cam="1">
+              <span class="hh-cam-dot"></span>
+              <span class="hh-cam-name">CAM 2 &nbsp;·&nbsp; CHASE</span>
+              <span class="hh-cam-badge">STBY</span>
+            </button>
+            <button class="hh-cam-btn" data-cam="2">
+              <span class="hh-cam-dot"></span>
+              <span class="hh-cam-name">CAM 3 &nbsp;·&nbsp; OVERHEAD</span>
+              <span class="hh-cam-badge">STBY</span>
+            </button>
+          </div>
+          <div class="hh-cam-active-lbl" id="hud-cam-label">CAM 1 · PILOT</div>
+        </div>
+
+        <!-- Vehicle diagram -->
+        <div class="hh-psection hh-psection-grow">
+          <div class="hh-plabel">VEHICLE &nbsp;/ &nbsp;THRUSTERS</div>
+          <div class="hh-rov-diagram" id="rov-diagram"><!-- SVG injected --></div>
+          <div class="hh-legend">
+            <span class="hh-leg fwd">■ FWD</span>
+            <span class="hh-leg idle">■ IDLE</span>
+            <span class="hh-leg rev">■ REV</span>
+          </div>
+        </div>
+
+        <!-- System status -->
+        <div class="hh-psection">
+          <div class="hh-plabel">SYSTEM STATUS</div>
+          <div class="hh-sys-grid">
+            <div class="hh-sys-row"><span class="hh-sys-lbl">COMMS</span><span class="hh-sys-val ok">OK</span></div>
+            <div class="hh-sys-row"><span class="hh-sys-lbl">NAV</span><span class="hh-sys-val ok" id="sys-nav">OK</span></div>
+            <div class="hh-sys-row"><span class="hh-sys-lbl">POWER</span><span class="hh-sys-val ok" id="sys-pwr">OK</span></div>
+            <div class="hh-sys-row"><span class="hh-sys-lbl">THRUSTERS</span><span class="hh-sys-val ok" id="sys-thr">OK</span></div>
+          </div>
+        </div>
+
+        <!-- Lighting -->
+        <div class="hh-psection">
+          <div class="hh-plabel">LIGHTING</div>
+          <div class="hh-lights-row">
+            <div class="light-pip" id="lp1"></div>
+            <div class="light-pip" id="lp2"></div>
+            <span class="light-label" id="light-label">LIGHTS: OFF</span>
+          </div>
+        </div>
+
+      </div><!-- /hh-left -->
+
+      <!-- ══ RIGHT PANEL ══ -->
+      <div class="hh-right">
+
+        <!-- Depth -->
+        <div class="hh-psection">
+          <div class="hh-plabel">DEPTH</div>
+          <div class="hh-depth-wrap">
             <div class="depth-scale-track">
               <div class="depth-scale-fill" id="depth-fill"></div>
               <div class="depth-indicator" id="depth-ind"></div>
             </div>
-            <div class="depth-readout" id="depth-readout">0.0 m</div>
+            <div class="hh-depth-readout" id="depth-readout">0.0 m</div>
           </div>
         </div>
 
-        <div class="hud-panel">
-          <div class="panel-title">NAVIGATION</div>
-          <div class="compass-wrap">
+        <!-- Navigation / compass -->
+        <div class="hh-psection">
+          <div class="hh-plabel">NAVIGATION</div>
+          <div class="hh-nav-inner">
             <div class="compass" id="compass">
               <div class="compass-bezel">
                 <span class="c-N">N</span>
@@ -138,83 +198,141 @@
                 <div class="compass-needle"></div>
               </div>
             </div>
-            <div class="hdg-val" id="hdg-val">HDG 000°</div>
-          </div>
-          <div class="att-row">
-            <div class="att-item"><span class="a-lbl">PITCH</span><span class="a-val" id="a-pitch">+0.0°</span></div>
-            <div class="att-item"><span class="a-lbl">ROLL</span><span class="a-val" id="a-roll">+0.0°</span></div>
-          </div>
-        </div>
-
-        <div class="hud-panel">
-          <div class="panel-title">LIGHTS &amp; STATUS</div>
-          <div class="lights-row" id="lights-row">
-            <div class="light-pip" id="lp1"></div>
-            <div class="light-pip" id="lp2"></div>
-            <span class="light-label" id="light-label">LIGHTS: OFF</span>
-          </div>
-          <div class="speed-row">
-            <span class="s-lbl">SPEED</span>
-            <span class="s-val" id="speed-val">0.00 kn</span>
+            <div class="hh-nav-data">
+              <div class="hh-hdg-readout" id="hdg-val">HDG 000°</div>
+              <div class="hh-att-grid">
+                <div class="hh-att-item"><span class="hh-att-lbl">PITCH</span><span class="hh-att-val" id="a-pitch">+0.0°</span></div>
+                <div class="hh-att-item"><span class="hh-att-lbl">ROLL</span><span class="hh-att-val" id="a-roll">+0.0°</span></div>
+                <div class="hh-att-item"><span class="hh-att-lbl">SPEED</span><span class="hh-att-val" id="speed-val">0.00 kn</span></div>
+              </div>
+            </div>
           </div>
         </div>
 
-      </div>
-
-      <!-- ── ARTIFICIAL HORIZON ── -->
-      <div class="hud-horizon-wrap">
-        <div class="ah-frame">
-          <div class="ah-inner" id="ah-inner">
-            <div class="ah-sky"></div>
-            <div class="ah-gnd"></div>
-            <div class="ah-horizon"></div>
+        <!-- Attitude indicator (ADI) -->
+        <div class="hh-psection">
+          <div class="hh-plabel">ATTITUDE INDICATOR</div>
+          <div class="hh-adi-wrap">
+            <div class="ah-frame">
+              <div class="ah-inner" id="ah-inner">
+                <div class="ah-sky"></div>
+                <div class="ah-gnd"></div>
+                <div class="ah-horizon"></div>
+              </div>
+              <div class="ah-reticle"></div>
+            </div>
           </div>
-          <div class="ah-reticle"></div>
         </div>
+
+        <!-- Sensors -->
+        <div class="hh-psection">
+          <div class="hh-plabel">SENSORS</div>
+          <div class="hh-sensor-table">
+            <div class="hh-sens-row"><span class="hh-sens-lbl">TEMPERATURE</span><span class="hh-sens-val" id="s-temp">4.0 °C</span></div>
+            <div class="hh-sens-row"><span class="hh-sens-lbl">PRESSURE</span><span class="hh-sens-val" id="s-pres">1.0 bar</span></div>
+            <div class="hh-sens-row"><span class="hh-sens-lbl">SALINITY</span><span class="hh-sens-val" id="s-salt">35.0 ppt</span></div>
+            <div class="hh-sens-row"><span class="hh-sens-lbl">ALTITUDE</span><span class="hh-sens-val" id="s-alt">— m</span></div>
+          </div>
+        </div>
+
+      </div><!-- /hh-right -->
+
+      <!-- ══ BOTTOM PANEL ══ -->
+      <div class="hh-bottom">
+
+        <!-- Tab bar -->
+        <div class="hh-btabs">
+          <button class="hh-btab active" data-btab="thrusters">THRUSTERS</button>
+          <button class="hh-btab" data-btab="power">POWER &amp; TETHER</button>
+          <button class="hh-btab" data-btab="mission">MISSION</button>
+          <button class="hh-btab" data-btab="controls">CONTROLS</button>
+        </div>
+
+        <!-- Pane content -->
+        <div class="hh-bcontent">
+
+          <!-- THRUSTERS -->
+          <div class="hh-bpane active" id="btab-thrusters">
+            <div id="thruster-display" class="hh-thr-grid"></div>
+          </div>
+
+          <!-- POWER & TETHER -->
+          <div class="hh-bpane" id="btab-power">
+            <div class="hh-pwr-rows">
+              <div class="hh-pwr-row">
+                <span class="hh-pwr-lbl">POWER CONSUMPTION</span>
+                <div class="hh-bar-track"><div class="hh-bar-fill pwr-fill" id="pwr-bar" style="width:0%"></div></div>
+                <span class="hh-pwr-val" id="pwr-val">0 W</span>
+              </div>
+              <div class="hh-pwr-row">
+                <span class="hh-pwr-lbl">TETHER TENSION</span>
+                <div class="hh-bar-track"><div class="hh-bar-fill tns-fill" id="tns-bar" style="width:0%"></div></div>
+                <span class="hh-pwr-val" id="tns-val">0 N</span>
+              </div>
+              <div class="hh-pwr-row">
+                <span class="hh-pwr-lbl">TETHER DISTANCE FROM LARS</span>
+                <span class="hh-pwr-val" id="tether-dist">0.0 m</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- MISSION -->
+          <div class="hh-bpane" id="btab-mission">
+            <div id="mission-list" class="hh-mission-list"></div>
+            <div id="mission-none" class="hh-mission-none">No mission active — Free Exploration mode</div>
+          </div>
+
+          <!-- CONTROLS -->
+          <div class="hh-bpane" id="btab-controls">
+            <div class="hh-ctrl-grid">
+              <div class="hh-ctrl-item"><kbd>W/S</kbd><span>Surge</span></div>
+              <div class="hh-ctrl-item"><kbd>A/D</kbd><span>Sway</span></div>
+              <div class="hh-ctrl-item"><kbd>R/F</kbd><span>Heave</span></div>
+              <div class="hh-ctrl-item"><kbd>Q/E</kbd><span>Yaw</span></div>
+              <div class="hh-ctrl-item"><kbd>T/G</kbd><span>Pitch</span></div>
+              <div class="hh-ctrl-item"><kbd>Z/X</kbd><span>Roll</span></div>
+              <div class="hh-ctrl-item"><kbd>L / A</kbd><span>Lights</span></div>
+              <div class="hh-ctrl-item"><kbd>C / B</kbd><span>Camera</span></div>
+              <div class="hh-ctrl-item"><kbd>M / X</kbd><span>Manipulator</span></div>
+              <div class="hh-ctrl-item"><kbd>ESC / ▶</kbd><span>Pause</span></div>
+              <div class="hh-ctrl-item"><kbd>L.Stick</kbd><span>Surge / Sway</span></div>
+              <div class="hh-ctrl-item"><kbd>R.Stick</kbd><span>Yaw / Pitch</span></div>
+              <div class="hh-ctrl-item"><kbd>RT / LT</kbd><span>Heave ↕</span></div>
+              <div class="hh-ctrl-item"><kbd>LB / RB</kbd><span>Roll</span></div>
+            </div>
+          </div>
+
+        </div><!-- /hh-bcontent -->
+      </div><!-- /hh-bottom -->
+
+      <!-- Crosshair -->
+      <div class="hh-crosshair">
+        <div class="xh-ring"></div>
+        <div class="xh-dot"></div>
       </div>
 
-      <!-- ── MISSION PANEL ── -->
-      <div class="mission-panel" id="mission-panel">
-        <div class="panel-title">MISSION OBJECTIVES</div>
-        <div id="mission-list"></div>
-      </div>
-
-      <!-- ── CONTROL HINTS ── -->
-      <div class="hud-hints">
-        <span><kbd>W/S</kbd><kbd>L̈</kbd> Surge</span>
-        <span><kbd>A/D</kbd><kbd>L↔</kbd> Sway</span>
-        <span><kbd>R/F</kbd><kbd>RT/LT</kbd> Heave</span>
-        <span><kbd>Q/E</kbd><kbd>R̈</kbd> Yaw</span>
-        <span><kbd>T/G</kbd><kbd>R↕</kbd> Pitch</span>
-        <span><kbd>Z/X</kbd><kbd>LB/RB</kbd> Roll</span>
-        <span><kbd>L</kbd><kbd>A</kbd> Lights</span>
-        <span><kbd>C</kbd><kbd>B</kbd> Camera</span>
-        <span><kbd>M</kbd><kbd>X</kbd> Manip</span>
-        <span><kbd>ESC</kbd><kbd>▶</kbd> Pause</span>
-      </div>
-
-      <!-- ── ALERT STACK ── -->
+      <!-- Alerts -->
       <div class="alert-stack" id="alert-stack"></div>
 
-      <!-- ── DEPTH WARNING ── -->
-      <div class="depth-warn hidden" id="depth-warn">⚠ APPROACHING MAX DEPTH</div>
+      <!-- Depth warning -->
+      <div class="depth-warn hidden" id="depth-warn">▲ &nbsp;APPROACHING MAX DEPTH</div>
 
     </div><!-- /hud -->
 
-    <!-- ─── PAUSE MENU ─── -->
+    <!-- ─────────────────────────── PAUSE MENU ─────────────────────────── -->
     <div id="pause-menu" class="hidden">
       <div class="pause-box">
+        <div class="pause-hex-bg"></div>
+        <div class="pause-logo">HH</div>
         <div class="pause-title">SIMULATION PAUSED</div>
-        <button onclick="SimApp.resume()">RESUME</button>
+        <button onclick="SimApp.resume()">RESUME MISSION</button>
         <button onclick="SimApp.returnToMenu()">MAIN MENU</button>
       </div>
     </div>
 
   </div><!-- /simulator-screen -->
 
-  <!-- Three.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <!-- App scripts -->
   <script src="js/config.js"></script>
   <script src="js/rov-builder.js"></script>
   <script src="js/environment.js"></script>
